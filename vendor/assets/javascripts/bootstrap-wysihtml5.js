@@ -207,9 +207,6 @@
         },
 
         initHtml: function(toolbar) {
-            // check to see if moving fromTextAreaToComposer
-            // if a difference string exists, don't do anything.
-            // else toggle.
             var self = this;
 
             var changeViewSelector = "a[data-wysihtml5-action='change_view']";
