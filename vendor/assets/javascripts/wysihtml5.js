@@ -7962,29 +7962,18 @@ wysihtml5.views.View = Base.extend(
       return value;
     },
 
+    getDifferenceString: function(html, parse) {
+        if (parse) {
+            parsedHTML = this.parent.parse(html);
+            if (!(parsedHTML == html))
+                return diffString(escape(html.toString()), escape(parsedHTML.toString()));
+            }
+            return "";
+    },
+
     setValue: function(html, parse) {
       if (parse) {
-        parsedHTML = "";
-        parsedHTML = this.parent.parse(html);
-        if (!(parsedHTML == html)) {
-            differenceString = diffString(html, parsedHTML);
-            bootbox.dialog("<p><strong>Some changes were made to your HTML to make it compile properly.</strong></p><p>Here are the differences:</i></p><p>" + differenceString + "</p>", [{
-              "label" : "Return to HTML editor",
-              "class" : "btn pull-left",
-              "callback" : function() {
-                console.log('doing nothing');
-                //change the view with fromComposerToTextArea(false
-                }
-              }, {
-              "label" : "Looks good. Keep changes.",
-              "class" : "btn btn-primary",  
-              "callback": function() {
-                html = parsedHTML;
-              }
-              }], {
-              "header": "Double checking..."
-            });
-        }
+        html = this.parent.parse(html);
       }
       this.element.innerHTML = html;
     },
@@ -8659,6 +8648,7 @@ wysihtml5.views.View = Base.extend(
      * @param {Boolean} shouldParseHtml Whether the html should be sanitized before inserting it into the textarea
      */
     fromComposerToTextarea: function(shouldParseHtml) {
+      var shouldParseHtml = false;
       this.textarea.setValue(wysihtml5.lang.string(this.composer.getValue()).trim(), shouldParseHtml);
     },
 
@@ -8719,12 +8709,12 @@ wysihtml5.views.View = Base.extend(
         });
       }
 
-      this.editor.observe("change_view", function(view) { 
+      this.editor.observe("change_view", function(view) {
         if (view === "composer" && !interval) {
           that.fromTextareaToComposer(true);
           startInterval();
         } else if (view === "textarea") {
-          that.fromComposerToTextarea(true);
+          that.fromComposerToTextarea(false);
           stopInterval();
         }
       });
@@ -8746,8 +8736,6 @@ wysihtml5.views.Textarea = wysihtml5.views.View.extend(
   clear: function() {
     this.element.value = "";
   },
-  
-
 
   getValue: function(parse) {
     var value = this.isEmpty() ? "" : this.element.value;
@@ -8755,6 +8743,15 @@ wysihtml5.views.Textarea = wysihtml5.views.View.extend(
       value = this.parent.parse(value);
     }
     return value;
+  },
+
+  getDifferenceString: function(html, parse) {
+    if (parse) {
+        parsedHTML = this.parent.parse(html);
+        if (!(parsedHTML == html))
+            return diffString(escape(html.toString()), escape(parsedHTML.toString()));
+    }
+        return "";
   },
   
   setValue: function(html, parse) {
@@ -9215,10 +9212,17 @@ wysihtml5.views.Textarea = wysihtml5.views.View.extend(
 
     execAction: function(action) {
       var editor = this.editor;
+      var that = this;
       switch(action) {
         case "change_view":
           if (editor.currentView === editor.textarea) {
-            editor.fire("change_view", "composer");
+            var textareaValue = editor.textarea.getValue();
+            var differenceString = editor.getDifferenceString(textareaValue, true);
+            if (!(differenceString == "")) {
+              return false;
+            }
+            else
+              editor.fire("change_view", "composer");
           } else {
             editor.fire("change_view", "textarea");
           }
@@ -9265,7 +9269,6 @@ wysihtml5.views.Textarea = wysihtml5.views.View.extend(
         clearInterval(that.interval);
         that.interval = setInterval(function() { that._updateLinkStates(); }, 500);
       });
-
       editor.observe("blur:composer", function() {
         clearInterval(that.interval);
       });
@@ -9486,6 +9489,12 @@ wysihtml5.views.Textarea = wysihtml5.views.View.extend(
       return this.currentView.getValue(parse);
     },
 
+
+    // Returns the difference string between the html and parsedHTML
+    getDifferenceString: function(html, parse) {
+        return this.currentView.getDifferenceString(html, parse);
+    },
+
     setValue: function(html, parse) {
       if (!html) {
         return this.clear();
@@ -9602,23 +9611,23 @@ function diffString( o, n ) {
 
   if (out.n.length == 0) {
       for (var i = 0; i < out.o.length; i++) {
-        str += '<del>' + escape(out.o[i]) + oSpace[i] + "</del>";
+        str += '<del>' + out.o[i] + oSpace[i] + "</del>";
       }
   } else {
     if (out.n[0].text == null) {
       for (n = 0; n < out.o.length && out.o[n].text == null; n++) {
-        str += '<del>' + escape(out.o[n]) + oSpace[n] + "</del>";
+        str += '<del>' + out.o[n] + oSpace[n] + "</del>";
       }
     }
 
     for ( var i = 0; i < out.n.length; i++ ) {
       if (out.n[i].text == null) {
-        str += '<ins>' + escape(out.n[i]) + nSpace[i] + "</ins>";
+        str += '<ins>' + out.n[i] + nSpace[i] + "</ins>";
       } else {
         var pre = "";
 
         for (n = out.n[i].row + 1; n < out.o.length && out.o[n].text == null; n++ ) {
-          pre += '<del>' + escape(out.o[n]) + oSpace[n] + "</del>";
+          pre += '<del>' + out.o[n] + oSpace[n] + "</del>";
         }
         str += " " + out.n[i].text + nSpace[i] + pre;
       }

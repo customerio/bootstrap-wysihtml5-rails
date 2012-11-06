@@ -109,9 +109,6 @@
                 },
                 "a":  {
                     set_attributes: {
-                        target: "_blank",
-                        rel:    "nofollow"
-
                     },
                     check_attributes: {
                         href:   "url" // important to avoid XSS
@@ -210,9 +207,40 @@
         },
 
         initHtml: function(toolbar) {
+            // check to see if moving fromTextAreaToComposer
+            // if a difference string exists, don't do anything.
+            // else toggle.
+            var self = this;
+
             var changeViewSelector = "a[data-wysihtml5-action='change_view']";
             toolbar.find(changeViewSelector).click(function(e) {
-                toolbar.find('a.btn').not(changeViewSelector).toggleClass('disabled');
+              if (self.editor.currentView === self.editor.textarea) {
+                var textareaValue = self.editor.textarea.getValue();
+                var differenceString = self.editor.getDifferenceString(textareaValue, true);
+                if (!(differenceString == "")) {
+                  e.preventDefault();
+                  var box = bootbox.dialog("<p><strong>Oops, we noticed some errors in your HTML. We made these changes to clean it up:</i></p><div>" + differenceString + "</div>", [{
+                  "label" : "Don't keep these changes.",
+                  "class" : "btn pull-left",
+                  "callback" : function() {
+                    box.modal('hide');
+                    return false;
+                  }
+                  }, {
+                  "label" : "Looks good. Keep changes.",
+                  "class" : "btn btn-primary",  
+                  "callback": function() {
+                    box.modal('hide');
+                    self.editor.fire("change_view", "composer");
+                    toolbar.find('a.btn').not(changeViewSelector).toggleClass('disabled');
+                  }
+                  }], {
+                  "header": "Double checking..."
+                  });
+                } else
+                   toolbar.find('a.btn').not(changeViewSelector).toggleClass('disabled');
+              } else 
+                 toolbar.find('a.btn').not(changeViewSelector).toggleClass('disabled');
             });
         },
 
