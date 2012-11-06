@@ -219,8 +219,8 @@
                 var differenceString = self.editor.getDifferenceString(textareaValue, true);
                 if (!(differenceString == "")) {
                   e.preventDefault();
-                  var box = bootbox.dialog("<p><strong>Oops, we noticed some errors in your HTML. We made these changes to clean it up:</i></p><div>" + differenceString + "</div>", [{
-                  "label" : "Don't keep these changes.",
+                  var box = bootbox.dialog("<p><strong>Oops, we noticed some errors in your HTML.</strong><p>We made these changes to clean it up:</p><div>" + differenceString + "</div>", [{
+                  "label" : "Ignore changes and return to HTML editor.",
                   "class" : "btn pull-left",
                   "callback" : function() {
                     box.modal('hide');

@@ -9531,6 +9531,10 @@ wysihtml5.views.Textarea = wysihtml5.views.View.extend(
     hasPlaceholderSet: function() {
       return this.currentView.hasPlaceholderSet();
     },
+
+    isTextArea: function() {
+      return this.currentView === this.textarea;
+    },
     
     parse: function(htmlOrElement) {
       var returnValue = this.config.parser(htmlOrElement, this.config.parserRules, this.composer.sandbox.getDocument(), true);
