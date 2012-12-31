@@ -76,8 +76,20 @@
                            "<div class='btn-group'>" +
                                "<a class='btn' data-wysihtml5-action='change_view' title='Edit HTML'>HTML</a>" +
                            "</div>" +
+                       "</li>",
+
+        "customerAttributesDropdown":
+                       "<li>" +
+                           "<div class='btn-group'>" +
+                               "<a class='btn dropdown-toggle' data-toggle='dropdown' href='#'>Insert Attribute " +
+                                 "<span class='caret'></span>" +
+                               "</a>" +
+                               "<ul class='dropdown-menu' id='customer-dropdown'>" +
+                               "</ul>" + 
+                           "</div>" +
                        "</li>"
-    };
+                     }                      
+    
 
     var defaultOptions = {
         "font-styles": true,
@@ -86,6 +98,8 @@
         "html": false,
         "link": true,
         "image": true,
+        "customerAttributesDropdown": false,
+        customerAttributes: [],
         events: {},
         parserRules: {
             tags: {
@@ -165,6 +179,7 @@
                 'style': "display:none"
             });
 
+
             for(var key in defaultOptions) {
                 var value = false;
 
@@ -177,8 +192,9 @@
                 }
 
                 if(value === true) {
-                    toolbar.append(templates[key]);
 
+                   if (key != "customerAttributesDropdown") toolbar.append(templates[key]);
+                    
                     if(key === "html") {
                         this.initHtml(toolbar);
                     }
@@ -189,6 +205,13 @@
 
                     if(key === "image") {
                         this.initInsertImage(toolbar);
+                    }
+
+                    if(key === "customerAttributesDropdown") {
+                      if (options["customerAttributesDropdown"] === true && options["customerAttributes"] !== undefined) {
+                        toolbar.append(templates[key]);
+                        this.initInsertCustomerAttributesDropdown(toolbar, options["customerAttributes"]);
+                      }
                     }
                 }
             }
@@ -214,6 +237,24 @@
             toolbar.find(changeViewSelector).click(function(e) {
                 toolbar.find('a.btn').not(changeViewSelector).toggleClass('disabled');
             });
+        },
+
+        initInsertCustomerAttributesDropdown: function(toolbar, customerAttributes) {
+            var dropdown = toolbar.find('#customer-dropdown');
+            if (customerAttributes.length == 0) {
+              dropdown.append('<li><a><span class="tab"> No attributes found.</span></a></li>');
+            
+            } else {
+              for (var i = 0; i < customerAttributes.length; i++) {
+                dropdown.append('<li><a href="#"><span class="tab">customer.' + customerAttributes[i] + '</span></a></li>');  
+              };
+
+              dropdown.find('li').click(function(e) {
+                e.preventDefault();
+                var attribute = ($(this).find('a span'))[0].innerText;
+                self.editor.composer.commands.exec("insertAttribute", attribute);
+              });
+            }
         },
 
         initInsertImage: function(toolbar) {
