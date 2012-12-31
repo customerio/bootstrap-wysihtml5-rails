@@ -5410,7 +5410,8 @@ wysihtml5.dom.replaceWithChildNodes = function(node) {
         "width":              0,
         "height":             0,
         "marginwidth":        0,
-        "marginheight":       0
+        "marginheight":       0,
+        "name":               "wysihtml5"
       }).on(iframe);
 
       // Setting the src like this prevents ssl warnings in IE6
@@ -6889,6 +6890,31 @@ wysihtml5.Commands = Base.extend(
     }
   };
 })(wysihtml5);
+
+(function(wysihtml5) {
+  var undef;
+      
+  
+  wysihtml5.commands.insertAttribute = {
+    exec: function(composer, command, value) {
+        doc = composer.doc;
+        textNode = doc.createTextNode("{{" + value + "}}");
+        composer.selection.insertNode(textNode);
+        whiteSpace = doc.createTextNode(" ");
+        composer.selection.insertNode(whiteSpace);
+        //elementToSetCaretAfter = whiteSpace;
+        //composer.selection.setAfter(elementToSetCaretAfter);
+    },
+
+    value: function() {
+      return undef;
+    }
+  };
+})(wysihtml5);
+
+
+
+
 
 (function(wysihtml5) {
   var undef,
@@ -8538,8 +8564,6 @@ wysihtml5.views.View = Base.extend(
       var dataTransfer = event.dataTransfer,
           data;
 
-
-      console.log('PASTED', event);
       if (dataTransfer && browser.supportsDataTransfer()) {
         data = dataTransfer.getData("text/html") || dataTransfer.getData("text/plain");
       }
