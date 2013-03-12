@@ -308,11 +308,20 @@
               var LIQUID_OPENING_REG_EXP = "%7B%7B";
               var LIQUID_CLOSING_REG_EXP = "%7D%7D";  
               return url.replace(LIQUID_OPENING_REG_EXP, "{{").replace(LIQUID_CLOSING_REG_EXP, "}}")
-            }
+            };
+
+            var ensureHttp = function(url) {
+              var patt = new RegExp("(^http:\/\/|^https:\/\/)","i");
+              if (!patt.test(url)) {
+                url = "http://" + url;
+              } 
+              return url;
+            };
 
             var insertLink = function() {
                 var url = urlInput.val();
                 url = removeEscapingForLiquidTags(url);
+                url = ensureHttp(url);
                 urlInput.val(removeEscapingForLiquidTags(initialValue));
                 var displayText = removeEscapingForLiquidTags(urlDisplayText.val())
                 
