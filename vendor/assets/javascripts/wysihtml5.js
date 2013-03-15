@@ -7004,6 +7004,7 @@ wysihtml5.Commands = Base.extend(
      *    wysihtml5.commands.createLink.exec(composer, "createLink", { href: "http://www.google.de", target: "_blank" });
      */
     exec: function(composer, command, value) {
+
       var anchors = this.state(composer, command);
       
       // Remove existing anchors

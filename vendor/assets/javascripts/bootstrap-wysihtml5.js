@@ -326,7 +326,7 @@
                 url = ensureHttp(url);
                 urlInput.val(removeEscapingForLiquidTags(initialValue));
                 var displayText = removeEscapingForLiquidTags(urlDisplayText.val())
-                
+
                 if (urlDisplayText.val() == "")
                     displayText = url;
               
@@ -365,10 +365,10 @@
                 // Get link and range for cursor
                 var link = self.editor.composer.commands.state("createLink");
                 var range = self.editor.composer.selection.getRange();
-                
+
                 // Update href
-                if (link && link[0] && link[0].href) {
-                  urlInput.val(removeEscapingForLiquidTags(link[0].href));
+                if (link && link[0] && $(link[0]).attr('href')) {
+                  urlInput.val(removeEscapingForLiquidTags($(link[0]).attr('href')));
                 }
 
                 // Make display text equal to the selected range, if range exists
