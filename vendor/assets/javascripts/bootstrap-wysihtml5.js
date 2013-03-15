@@ -311,8 +311,10 @@
             };
 
             var ensureHttp = function(url) {
+              var liquid = new RegExp('({{)', 'g');
               var patt = new RegExp("(^http:\/\/|^https:\/\/)","i");
-              if (!patt.test(url)) {
+              if (!liquid.test(url) && !patt.test(url)) {
+                debugger;
                 url = "http://" + url;
               } 
               return url;
