@@ -8004,6 +8004,15 @@ wysihtml5.views.View = Base.extend(
       return value;
     },
 
+    getDifferenceString: function(html, parse) {
+        if (parse) {
+            parsedHTML = this.parent.parse(html);
+            if (!(parsedHTML == html))
+                return diffString(escape(html.toString()), escape(parsedHTML.toString()));
+            }
+            return "";
+    },
+
     setValue: function(html, parse) {
       if (parse) {
         html = this.parent.parse(html);
@@ -8682,6 +8691,7 @@ wysihtml5.views.View = Base.extend(
      * @param {Boolean} shouldParseHtml Whether the html should be sanitized before inserting it into the textarea
      */
     fromComposerToTextarea: function(shouldParseHtml) {
+      var shouldParseHtml = false;
       this.textarea.setValue(wysihtml5.lang.string(this.composer.getValue()).trim(), shouldParseHtml);
     },
 
@@ -8747,7 +8757,7 @@ wysihtml5.views.View = Base.extend(
           that.fromTextareaToComposer(true);
           startInterval();
         } else if (view === "textarea") {
-          that.fromComposerToTextarea(true);
+          that.fromComposerToTextarea(false);
           stopInterval();
         }
       });
@@ -8769,13 +8779,22 @@ wysihtml5.views.Textarea = wysihtml5.views.View.extend(
   clear: function() {
     this.element.value = "";
   },
-  
+
   getValue: function(parse) {
     var value = this.isEmpty() ? "" : this.element.value;
     if (parse) {
       value = this.parent.parse(value);
     }
     return value;
+  },
+
+  getDifferenceString: function(html, parse) {
+    if (parse) {
+        parsedHTML = this.parent.parse(html);
+        if (!(parsedHTML == html))
+            return diffString(escape(html.toString()), escape(parsedHTML.toString()));
+    }
+        return "";
   },
   
   setValue: function(html, parse) {
@@ -9236,10 +9255,17 @@ wysihtml5.views.Textarea = wysihtml5.views.View.extend(
 
     execAction: function(action) {
       var editor = this.editor;
+      var that = this;
       switch(action) {
         case "change_view":
           if (editor.currentView === editor.textarea) {
-            editor.fire("change_view", "composer");
+            var textareaValue = editor.textarea.getValue();
+            var differenceString = editor.getDifferenceString(textareaValue, true);
+            if (!(differenceString == "")) {
+              return false;
+            }
+            else
+              editor.fire("change_view", "composer");
           } else {
             editor.fire("change_view", "textarea");
           }
@@ -9286,7 +9312,6 @@ wysihtml5.views.Textarea = wysihtml5.views.View.extend(
         clearInterval(that.interval);
         that.interval = setInterval(function() { that._updateLinkStates(); }, 500);
       });
-
       editor.observe("blur:composer", function() {
         clearInterval(that.interval);
       });
@@ -9509,6 +9534,12 @@ wysihtml5.views.Textarea = wysihtml5.views.View.extend(
       return this.currentView.getValue(parse);
     },
 
+
+    // Returns the difference string between the html and parsedHTML
+    getDifferenceString: function(html, parse) {
+        return this.currentView.getDifferenceString(html, parse);
+    },
+
     setValue: function(html, parse) {
       if (!html) {
         return this.clear();
@@ -9545,6 +9576,10 @@ wysihtml5.views.Textarea = wysihtml5.views.View.extend(
     hasPlaceholderSet: function() {
       return this.currentView.hasPlaceholderSet();
     },
+
+    isTextArea: function() {
+      return this.currentView === this.textarea;
+    },
     
     parse: function(htmlOrElement) {
       var returnValue = this.config.parser(htmlOrElement, this.config.parserRules, this.composer.sandbox.getDocument(), true);
@@ -9569,11 +9604,176 @@ wysihtml5.views.Textarea = wysihtml5.views.View.extend(
       });
       
       this.observe("paste:textarea", function() {
+        // Do not parse pasted text immediately.
+        /*
         var value   = this.textarea.getValue(),
             newValue;
         newValue = this.parse(value);
         this.textarea.setValue(newValue);
+        */
       });
     }
   });
 })(wysihtml5);
+
+
+/*
+ * Javascript Diff Algorithm
+ *  By John Resig (http://ejohn.org/)
+ *  Modified by Chu Alan "sprite"
+ *
+ * Released under the MIT license.
+ *
+ * More Info:
+ *  http://ejohn.org/projects/javascript-diff-algorithm/
+ */
+
+function escape(s) {
+    var n = s;
+    n = n.replace(/&/g, "&amp;");
+    n = n.replace(/</g, "&lt;");
+    n = n.replace(/>/g, "&gt;");
+    n = n.replace(/"/g, "&quot;");
+
+    return n;
+}
+
+function diffString( o, n ) {
+  o = o.replace(/\s+$/, '');
+  n = n.replace(/\s+$/, '');
+
+  var out = diff(o == "" ? [] : o.split(/\s+/), n == "" ? [] : n.split(/\s+/) );
+  var str = "";
+
+  var oSpace = o.match(/\s+/g);
+  if (oSpace == null) {
+    oSpace = ["\n"];
+  } else {
+    oSpace.push("\n");
+  }
+  var nSpace = n.match(/\s+/g);
+  if (nSpace == null) {
+    nSpace = ["\n"];
+  } else {
+    nSpace.push("\n");
+  }
+
+  if (out.n.length == 0) {
+      for (var i = 0; i < out.o.length; i++) {
+        str += '<del>' + out.o[i] + oSpace[i] + "</del>";
+      }
+  } else {
+    if (out.n[0].text == null) {
+      for (n = 0; n < out.o.length && out.o[n].text == null; n++) {
+        str += '<del>' + out.o[n] + oSpace[n] + "</del>";
+      }
+    }
+
+    for ( var i = 0; i < out.n.length; i++ ) {
+      if (out.n[i].text == null) {
+        str += '<ins>' + out.n[i] + nSpace[i] + "</ins>";
+      } else {
+        var pre = "";
+
+        for (n = out.n[i].row + 1; n < out.o.length && out.o[n].text == null; n++ ) {
+          pre += '<del>' + out.o[n] + oSpace[n] + "</del>";
+        }
+        str += " " + out.n[i].text + nSpace[i] + pre;
+      }
+    }
+  }
+  
+  return str;
+}
+
+function randomColor() {
+    return "rgb(" + (Math.random() * 100) + "%, " + 
+                    (Math.random() * 100) + "%, " + 
+                    (Math.random() * 100) + "%)";
+}
+function diffString2( o, n ) {
+  o = o.replace(/\s+$/, '');
+  n = n.replace(/\s+$/, '');
+
+  var out = diff(o == "" ? [] : o.split(/\s+/), n == "" ? [] : n.split(/\s+/) );
+
+  var oSpace = o.match(/\s+/g);
+  if (oSpace == null) {
+    oSpace = ["\n"];
+  } else {
+    oSpace.push("\n");
+  }
+  var nSpace = n.match(/\s+/g);
+  if (nSpace == null) {
+    nSpace = ["\n"];
+  } else {
+    nSpace.push("\n");
+  }
+
+  var os = "";
+  var colors = new Array();
+  for (var i = 0; i < out.o.length; i++) {
+      colors[i] = randomColor();
+
+      if (out.o[i].text != null) {
+          os += '<span style="background-color: ' +colors[i]+ '">' + 
+                escape(out.o[i].text) + oSpace[i] + "</span>";
+      } else {
+          os += "<del>" + escape(out.o[i]) + oSpace[i] + "</del>";
+      }
+  }
+
+  var ns = "";
+  for (var i = 0; i < out.n.length; i++) {
+      if (out.n[i].text != null) {
+          ns += '<span style="background-color: ' +colors[out.n[i].row]+ '">' + 
+                escape(out.n[i].text) + nSpace[i] + "</span>";
+      } else {
+          ns += "<ins>" + escape(out.n[i]) + nSpace[i] + "</ins>";
+      }
+  }
+
+  return { o : os , n : ns };
+}
+
+function diff( o, n ) {
+  var ns = new Object();
+  var os = new Object();
+  
+  for ( var i = 0; i < n.length; i++ ) {
+    if ( ns[ n[i] ] == null )
+      ns[ n[i] ] = { rows: new Array(), o: null };
+    ns[ n[i] ].rows.push( i );
+  }
+  
+  for ( var i = 0; i < o.length; i++ ) {
+    if ( os[ o[i] ] == null )
+      os[ o[i] ] = { rows: new Array(), n: null };
+    os[ o[i] ].rows.push( i );
+  }
+  
+  for ( var i in ns ) {
+    if ( ns[i].rows.length == 1 && typeof(os[i]) != "undefined" && os[i].rows.length == 1 ) {
+      n[ ns[i].rows[0] ] = { text: n[ ns[i].rows[0] ], row: os[i].rows[0] };
+      o[ os[i].rows[0] ] = { text: o[ os[i].rows[0] ], row: ns[i].rows[0] };
+    }
+  }
+  
+  for ( var i = 0; i < n.length - 1; i++ ) {
+    if ( n[i].text != null && n[i+1].text == null && n[i].row + 1 < o.length && o[ n[i].row + 1 ].text == null && 
+         n[i+1] == o[ n[i].row + 1 ] ) {
+      n[i+1] = { text: n[i+1], row: n[i].row + 1 };
+      o[n[i].row+1] = { text: o[n[i].row+1], row: i + 1 };
+    }
+  }
+  
+  for ( var i = n.length - 1; i > 0; i-- ) {
+    if ( n[i].text != null && n[i-1].text == null && n[i].row > 0 && o[ n[i].row - 1 ].text == null && 
+         n[i-1] == o[ n[i].row - 1 ] ) {
+      n[i-1] = { text: n[i-1], row: n[i].row - 1 };
+      o[n[i].row-1] = { text: o[n[i].row-1], row: i - 1 };
+    }
+  }
+  
+  return { o: o, n: n };
+}
