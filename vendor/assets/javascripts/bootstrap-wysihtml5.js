@@ -76,8 +76,20 @@
                            "<div class='btn-group'>" +
                                "<a class='btn' data-wysihtml5-action='change_view' title='Edit HTML'>HTML</a>" +
                            "</div>" +
+                       "</li>",
+
+        "customerAttributesDropdown":
+                       "<li>" +
+                           "<div class='btn-group'>" +
+                               "<a class='btn dropdown-toggle' data-toggle='dropdown' href='#'>Insert Attribute " +
+                                 "<span class='caret'></span>" +
+                               "</a>" +
+                               "<ul class='dropdown-menu' id='customer-dropdown'>" +
+                               "</ul>" + 
+                           "</div>" +
                        "</li>"
-    };
+                     }                      
+    
 
     var defaultOptions = {
         "font-styles": true,
@@ -86,6 +98,8 @@
         "html": false,
         "link": true,
         "image": true,
+        "customerAttributesDropdown": false,
+        customerAttributes: [],
         events: {},
         parserRules: {
             tags: {
@@ -162,6 +176,7 @@
                 'style': "display:none"
             });
 
+
             for(var key in defaultOptions) {
                 var value = false;
 
@@ -174,8 +189,9 @@
                 }
 
                 if(value === true) {
-                    toolbar.append(templates[key]);
 
+                   if (key != "customerAttributesDropdown") toolbar.append(templates[key]);
+                    
                     if(key === "html") {
                         this.initHtml(toolbar);
                     }
@@ -186,6 +202,13 @@
 
                     if(key === "image") {
                         this.initInsertImage(toolbar);
+                    }
+
+                    if(key === "customerAttributesDropdown") {
+                      if (options["customerAttributesDropdown"] === true && options["customerAttributes"] !== undefined) {
+                        toolbar.append(templates[key]);
+                        this.initInsertCustomerAttributesDropdown(toolbar, options["customerAttributes"]);
+                      }
                     }
                 }
             }
@@ -241,6 +264,24 @@
             });
         },
 
+        initInsertCustomerAttributesDropdown: function(toolbar, customerAttributes) {
+            var dropdown = toolbar.find('#customer-dropdown');
+            if (customerAttributes.length == 0) {
+              dropdown.append('<li><a><span class="tab"> No attributes found.</span></a></li>');
+            
+            } else {
+              for (var i = 0; i < customerAttributes.length; i++) {
+                dropdown.append('<li><a href="#"><span class="tab">customer.' + customerAttributes[i] + '</span></a></li>');  
+              };
+
+              dropdown.find('li').click(function(e) {
+                e.preventDefault();
+                var attribute = ($(this).find('a span'))[0].innerText;
+                self.editor.composer.commands.exec("insertAttribute", attribute);
+              });
+            }
+        },
+
         initInsertImage: function(toolbar) {
             var self = this;
             var insertImageModal = toolbar.find('.bootstrap-wysihtml5-insert-image-modal');
@@ -292,14 +333,25 @@
               var LIQUID_OPENING_REG_EXP = "%7B%7B";
               var LIQUID_CLOSING_REG_EXP = "%7D%7D";  
               return url.replace(LIQUID_OPENING_REG_EXP, "{{").replace(LIQUID_CLOSING_REG_EXP, "}}")
-            }
+            };
+
+            var ensureHttp = function(url) {
+              var liquid = new RegExp('({{)', 'g');
+              var patt = new RegExp("(^http:\/\/|^https:\/\/)","i");
+              if (!liquid.test(url) && !patt.test(url)) {
+                debugger;
+                url = "http://" + url;
+              } 
+              return url;
+            };
 
             var insertLink = function() {
                 var url = urlInput.val();
                 url = removeEscapingForLiquidTags(url);
+                url = ensureHttp(url);
                 urlInput.val(removeEscapingForLiquidTags(initialValue));
                 var displayText = removeEscapingForLiquidTags(urlDisplayText.val())
-                
+
                 if (urlDisplayText.val() == "")
                     displayText = url;
               
@@ -338,10 +390,10 @@
                 // Get link and range for cursor
                 var link = self.editor.composer.commands.state("createLink");
                 var range = self.editor.composer.selection.getRange();
-                
+
                 // Update href
-                if (link && link[0] && link[0].href) {
-                  urlInput.val(removeEscapingForLiquidTags(link[0].href));
+                if (link && link[0] && $(link[0]).attr('href')) {
+                  urlInput.val(removeEscapingForLiquidTags($(link[0]).attr('href')));
                 }
 
                 // Make display text equal to the selected range, if range exists

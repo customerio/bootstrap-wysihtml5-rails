@@ -5410,7 +5410,8 @@ wysihtml5.dom.replaceWithChildNodes = function(node) {
         "width":              0,
         "height":             0,
         "marginwidth":        0,
-        "marginheight":       0
+        "marginheight":       0,
+        "name":               "wysihtml5"
       }).on(iframe);
 
       // Setting the src like this prevents ssl warnings in IE6
@@ -5781,6 +5782,20 @@ wysihtml5.quirks.cleanPastedHTML = (function() {
   var TILDE_ESCAPED = "%7E";
   wysihtml5.quirks.getCorrectInnerHTML = function(element) {
     var innerHTML = element.innerHTML;
+
+    var liquidBlocks = innerHTML.match(/({{.*?}}|{%.*?%})/g);
+
+    if (liquidBlocks) {
+      for (var i = 0; i < liquidBlocks.length; i++) {
+        var block = liquidBlocks[i];
+
+        var e       = document.createElement('div');
+        e.innerHTML = block;
+        var liquid  = e.childNodes.length === 0 ? "" : e.childNodes[0].nodeValue;
+
+        innerHTML = innerHTML.replace(block, liquid);
+      }
+    }
 
     if (innerHTML.indexOf(TILDE_ESCAPED) === -1) {
       return innerHTML;
@@ -6791,6 +6806,7 @@ wysihtml5.Commands = Base.extend(
     if (method) {
       args.unshift(this.composer);
       result = method.apply(obj, args);
+      this.editor.fire("execcommand:composer");
     } else {
       try {
         // try/catch for buggy firefox
@@ -6874,6 +6890,31 @@ wysihtml5.Commands = Base.extend(
     }
   };
 })(wysihtml5);
+
+(function(wysihtml5) {
+  var undef;
+      
+  
+  wysihtml5.commands.insertAttribute = {
+    exec: function(composer, command, value) {
+        doc = composer.doc;
+        textNode = doc.createTextNode("{{" + value + "}}");
+        composer.selection.insertNode(textNode);
+        whiteSpace = doc.createTextNode(" ");
+        composer.selection.insertNode(whiteSpace);
+        //elementToSetCaretAfter = whiteSpace;
+        //composer.selection.setAfter(elementToSetCaretAfter);
+    },
+
+    value: function() {
+      return undef;
+    }
+  };
+})(wysihtml5);
+
+
+
+
 
 (function(wysihtml5) {
   var undef,
@@ -6963,6 +7004,7 @@ wysihtml5.Commands = Base.extend(
      *    wysihtml5.commands.createLink.exec(composer, "createLink", { href: "http://www.google.de", target: "_blank" });
      */
     exec: function(composer, command, value) {
+
       var anchors = this.state(composer, command);
       
       // Remove existing anchors
@@ -8531,6 +8573,7 @@ wysihtml5.views.View = Base.extend(
     dom.observe(element, pasteEvents, function(event) {
       var dataTransfer = event.dataTransfer,
           data;
+
       if (dataTransfer && browser.supportsDataTransfer()) {
         data = dataTransfer.getData("text/html") || dataTransfer.getData("text/plain");
       }
@@ -9404,6 +9447,7 @@ wysihtml5.views.Textarea = wysihtml5.views.View.extend(
  *    undo:composer
  *    redo:composer
  *    beforecommand:composer
+ *    execcommand:composer
  *    aftercommand:composer
  *    change_view
  */
@@ -9470,10 +9514,11 @@ wysihtml5.views.Textarea = wysihtml5.views.View.extend(
           this.toolbar = new wysihtml5.toolbar.Toolbar(this, this.config.toolbar);
         }
       });
-      
+
       try {
         console.log("Heya! This page is using wysihtml5 for rich text editing. Check out https://github.com/xing/wysihtml5");
-      } catch(e) {}
+        } catch(e) {}
+
     },
     
     isCompatible: function() {
