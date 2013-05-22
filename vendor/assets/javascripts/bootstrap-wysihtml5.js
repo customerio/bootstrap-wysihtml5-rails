@@ -239,7 +239,7 @@
                 var differenceString = self.editor.getDifferenceString(textareaValue, true);
                 if (!(differenceString == "")) {
                   e.preventDefault();
-                  var box = bootbox.dialog("<p><strong>Oops, we noticed some errors in your HTML.</strong><p>We made these changes to clean it up:</p><div>" + differenceString + "</div>", [{
+                  var box = bootbox.dialog("<p><strong>Oops, we noticed some errors in your HTML.</strong> We made these changes to clean it up:</p><hr><div>" + differenceString + "</div>", [{
                   "label" : "Ignore changes and return to HTML editor.",
                   "class" : "btn pull-left",
                   "callback" : function() {
@@ -257,6 +257,7 @@
                   }], {
                   "header": "Double checking..."
                   });
+                  $(box[0]).addClass('modal-large differenceString');
                 } else
                    toolbar.find('a.btn').not(changeViewSelector).toggleClass('disabled');
               } else 
