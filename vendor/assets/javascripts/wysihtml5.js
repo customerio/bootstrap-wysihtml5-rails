@@ -9604,7 +9604,7 @@ wysihtml5.views.Textarea = wysihtml5.views.View.extend(
       });
       
       this.observe("paste:textarea", function() {
-        // Do not parse pasted text immediately.
+        // Do not parse pasted text immediately. AEG 06.24.13
         /*
         var value   = this.textarea.getValue(),
             newValue;
