@@ -278,7 +278,7 @@
 
               dropdown.find('li').click(function(e) {
                 e.preventDefault();
-                var attribute = ($(this).find('a span'))[0].innerText;
+                var attribute = $(this).find('a span').text();
                 self.editor.composer.commands.exec("insertAttribute", attribute);
               });
             }
