@@ -341,7 +341,6 @@
               var liquid = new RegExp('({{)', 'g');
               var patt = new RegExp("(^http:\/\/|^https:\/\/)","i");
               if (!liquid.test(url) && !patt.test(url)) {
-                debugger;
                 url = "http://" + url;
               } 
               return url;
@@ -351,7 +350,7 @@
                 var url = urlInput.val();
                 url = removeEscapingForLiquidTags(url);
                 url = ensureHttp(url);
-                urlInput.val(removeEscapingForLiquidTags(initialValue));
+                
                 var displayText = removeEscapingForLiquidTags(urlDisplayText.val())
 
                 if (urlDisplayText.val() == "")
@@ -363,6 +362,8 @@
                     rel: "nofollow",
                     text: displayText,
                 });
+
+                urlInput.val(url);
             };
 
             var pressedEnter = false;
